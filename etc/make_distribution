@@ -1,0 +1,8 @@
+#!/bin/bash -e
+
+export PYTHONPATH=$(pwd):$PYTHONPATH
+
+( cd rst && make clean && make html )
+./configure.py
+python setup.py sdist
+

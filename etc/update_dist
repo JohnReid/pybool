@@ -1,0 +1,79 @@
+#!/bin/bash -e
+
+
+#
+# Configuration
+#
+PYPI_NAME=pybool
+DIR=htdocs/pybool
+HOST=xenakis
+UPLOAD_URL="http://pypi.python.org/pypi?%3Aaction=pkg_edit&name=$PYPI_NAME"
+
+
+#
+# Build pdf of tutorial - now outdated - replaced by ReST
+#
+function build_tutorial_pdf {
+    rm -rf /tmp/pybool-export
+    svn export http://sysbio.mrc-bsu.cam.ac.uk/svn/johns/MyProjects/trunk/Python/pybool /tmp/pybool-export
+    cd /tmp/pybool-export/
+    cd tex/Figures/
+    ./make-figs.sh
+    cd ..
+    pdflatex -shell-escape pybool-tutorial
+    bibtex pybool-tutorial
+    pdflatex -shell-escape pybool-tutorial
+    pdflatex -shell-escape pybool-tutorial
+    scp pybool-tutorial.pdf $HOST:$DIR/
+}
+
+
+
+#
+# Copy index.html across
+#
+scp index.html $HOST:$DIR/
+
+
+#
+# Check everything is checked in
+#
+if [ "$(svn st)" != "" ]
+then
+  svn st
+  echo "You need to check in everything before updating distribution."
+  exit -1
+fi
+
+
+
+#
+# Build C++ code to make sure API docs generate OK
+#
+(cd C++; b2c -q release)
+
+
+#
+# Update the documentation and upload to pypi and our web host
+#
+rm -rf docs/source/apidoc/
+sphinx-apidoc -H pybool -A "John Reid" -o docs/source/apidoc python/
+LD_LIBRARY_PATH=python/pybool/ PYTHONPATH=python/:$HOME/Dev/Python/Cookbook/python/ python setup.py build_sphinx
+PYTHONPATH=python/ python setup.py upload_sphinx
+scp -r docs/build/html/* $HOST:$DIR/docs/build/html/
+
+
+#
+# Upload source build to pypi and our web host
+#
+python setup.py sdist upload --sign
+PACKAGE=$(ls -rt dist|tail -1) # get the latest package in dist/
+scp dist/$PACKAGE $HOST:$DIR/dist/
+
+
+#
+# Remind user
+#
+echo "**************************************************************************"
+echo "* Now is a good time to update the release number in the python package. *"
+echo "**************************************************************************"

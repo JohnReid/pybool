@@ -1,0 +1,15 @@
+pybool: A python package that infers Boolean networks given a set of constraints.
+
+Consider the common scenario of a biologist who is studying a particular
+regulatory network. They study a set of genes that are known to play a role in the
+network. They have some background knowledge of particular regulatory connections
+from his own studies or from the literature. In addition to this they have
+perturbation data that reveals the temporal order of expression of the genes under
+some conditions. For example, these could be derived from loss-of-function
+or over-expression experiments. The biologist would like to elucidate the entire
+network and to this end can perform various experiments to test particular regulatory
+connections. These experiments are costly and time-consuming. Which
+connections should they focus on? This is where the pybool package can help.
+By modelling candidate regulatory networks using Boolean logic, pybool evaluates
+which networks are consistent with the perturbation data and the known
+regulatory connections.

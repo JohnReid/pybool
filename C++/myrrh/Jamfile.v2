@@ -1,0 +1,236 @@
+#
+# Copyright John Reid 2008, 2009, 2010, 2011, 2012, 2013
+#
+
+import path ;
+
+
+
+#
+# Rule to add '-d' to debug shared libs
+#
+rule debug-tag ( name : type ? : property-set )
+{
+	if "$(type)" = "SHARED_LIB" && "debug" = [ $(property-set).get <variant> ] {
+		result = "$(name)-d" ;
+	} else {
+		result = "" ;
+	}
+	# echo "In rule tag; name='$(name)'; type='$(type)'; returning: '$(result)'" ;
+	return "$(result)" ;
+}
+
+
+
+
+#
+# sub-project Myrrh
+#
+project Myrrh
+	: requirements
+		<include>.
+		<include>$(BOOST_ROOT)
+		<include>$(BOOST_ITL) 
+		<define>BOOST_ALL_NO_LIB # disable boost auto-linking
+		<include>$(NUMPY_PATH)/numpy/core/include
+		<tag>@debug-tag
+	: usage-requirements
+		<include>.
+		<include>$(BOOST_ROOT)
+		<include>$(BOOST_ITL) 
+		<include>$(NUMPY_PATH)/numpy/core/include
+	;
+
+
+
+ 
+#   
+# header only library
+#
+alias myrrh ;
+
+
+
+#
+# library
+#
+LIB_SRCS =
+	application
+	;
+lib myrrh_lib
+	: 
+		src/$(LIB_SRCS).cpp
+		/boost/program_options//boost_program_options
+		/boost/date_time//boost_date_time
+	:
+		#<link>static
+	;
+
+
+#
+# python library
+#
+PYLIB_SRCS =
+	python/multi_array_to_numpy
+	;
+lib myrrh_pylib
+	: 
+		src/$(PYLIB_SRCS).cpp
+		/boost/python//boost_python
+	:
+		#<link>static
+	;
+
+
+
+#
+# Tests
+#
+TEST_SRCS =
+	trie
+	bit_set
+	#suffix_tree
+	chain_iterator
+	seqan_adaptors
+	type_names
+	;
+for test_src in $(TEST_SRCS)
+{
+	unit-test test_$(test_src)
+		:
+			.//myrrh
+			test/test_$(test_src).cpp
+			/boost/test//boost_unit_test_framework/<link>static
+			/site-config//seqan
+		:
+			<define>BOOST_ALL_NO_LIB=1
+			<define>_SCL_SECURE_NO_WARNINGS
+			<define>_CRT_SECURE_NO_WARNINGS
+			<toolset>msvc:<variant>debug:<testing.launcher>=dbg.bat
+		;
+	#explicit test_$(test_src) ;
+}
+alias all_tests : test_$(TEST_SRCS) ;
+
+
+#
+# Python boost range test
+#
+python-extension test_python_boost_range
+	: # sources
+		test/test_python_boost_range.cpp
+		/boost/python//boost_python
+    ;
+
+bpl-test boost_range_test
+	:
+		python_test/test_boost_range.py
+		test_python_boost_range
+	;
+#explicit boost_range_test ;
+
+
+
+#
+# Multi-array to/from numpy extension
+#
+python-extension _man
+	: # sources
+		src/python/man_module.cpp
+		myrrh_pylib
+		/boost/python//boost_python
+	;
+
+bpl-test man_test
+	:
+		python_test/test_man.py
+		_man
+	;
+
+
+
+#
+# Python interval template library extension
+#
+python-extension _pyitl
+	: # sources
+		src/python/pyitl_module.cpp
+		/boost/python//boost_python
+	;
+
+bpl-test pyitl_test
+	:
+		python_test/test_pyitl.py
+		_pyitl
+	;
+
+install install_pyitl
+	:
+		_pyitl 
+	:
+		<location>Python
+		<install-dependencies>off
+	;
+	
+BIN_DIR = ../../bin ;
+install install_so
+	:
+		/boost/python//boost_python
+	:
+		<variant>debug:<location>$(BIN_DIR)/debug
+		<variant>release:<location>$(BIN_DIR)
+	;
+
+
+#
+# Seqan extension
+#
+python-extension _seqan
+	: # sources
+		src/python/seqan_module.cpp
+		/boost/python//boost_python
+	:
+		<use>/site-config//seqan
+	;
+
+bpl-test seqan_test
+	:
+		python_test/test_seqan.py
+		_seqan
+	;
+
+
+
+#
+# Python numpy converter test
+#
+python-extension test_python_numpy_converter
+	: # sources
+		test/test_python_numpy_converter.cpp
+		/boost/python//boost_python
+    ;
+
+bpl-test numpy_converter_test
+	:
+		python_test/test_numpy_converter.py
+		test_python_numpy_converter
+	;
+
+
+#
+# Sandbox
+#
+for local file in [ glob src/sandbox/*.cpp ]
+{
+	local target = [ path.basename $(file) ] ;
+	exe sandbox_$(target)
+		:
+			$(file)
+		:
+			<include>$(SEQAN_PATH)
+		;
+	SANDBOX_TARGETS += sandbox_$(target) ;
+}
+alias sandbox : $(SANDBOX_TARGETS) ;
+
+

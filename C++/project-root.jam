@@ -1,0 +1,3 @@
+path-constant TOP : . ;
+use-project /boost : $(BOOST_ROOT) ;
+

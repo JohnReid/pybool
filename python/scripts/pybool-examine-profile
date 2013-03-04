@@ -1,0 +1,9 @@
+#!/usr/bin/env python
+#
+# Copyright John Reid 2010, 2011, 2012, 2013
+#
+
+import pstats
+p = pstats.Stats('network.prof')
+p.strip_dirs().sort_stats('time').print_stats(40)
+# p.strip_dirs().sort_stats('cumulative').print_stats(40)

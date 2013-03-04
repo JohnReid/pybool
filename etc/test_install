@@ -1,0 +1,10 @@
+#!/bin/bash -e
+
+DIR=build/test-install-dir
+rm -rf $DIR/
+virtualenv --distribute --system-site-packages $DIR
+$DIR/bin/python configure.py --boost-inc-dir=$HOME/local/include --boost-lib-dir=$HOME/local/lib --update-user
+$DIR/bin/python setup.py install
+LD_LIBRARY_PATH=$HOME/local/lib:$LD_LIBRARY_PATH $DIR/bin/python -c "import pybool; print pybool.__file__"
+LD_LIBRARY_PATH=$HOME/local/lib:$LD_LIBRARY_PATH $DIR/bin/python -c "import pybool.cNetwork"
+

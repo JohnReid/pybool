@@ -1,0 +1,75 @@
+#
+# Copyright John Reid 2010, 2011, 2012, 2013
+#
+
+
+
+#
+# Rule to add '-d' to debug shared libs
+#
+rule debug-tag ( name : type ? : property-set )
+{
+	if "$(type)" = "SHARED_LIB" && "debug" = [ $(property-set).get <variant> ] {
+		result = "$(name)-d" ;
+	} else {
+		result = "" ;
+	}
+	# echo "In rule tag; name='$(name)'; type='$(type)'; returning: '$(result)'" ;
+	return "$(result)" ;
+}
+
+path-constant MYRRH_ROOT : myrrh ;
+
+if "" = "$(NUMPY_PATH)" { 
+	EXIT "NUMPY_PATH not defined. Please add 'path-constant NUMPY_PATH : <numpy's location> ;' to <home dir>/site-config.jam" ; 
+}
+
+
+#
+# Network
+#
+project Network
+	: requirements
+		<include>.
+		<include>$(BOOST_ROOT)
+		<include>$(NUMPY_PATH)/numpy/core/include
+		<include>$(MYRRH_ROOT)
+		<tag>@debug-tag
+	: usage-requirements
+	;
+
+
+
+local INSTALL_DIR = ../python/pybool ;
+
+#
+# C++ implementation of network simulation
+#
+python-extension cNetwork
+	: # sources
+		module_network.cpp
+		$(MYRRH_ROOT)//myrrh_pylib
+		/boost/python//boost_python
+#	:
+#		<linkflags>-Wl,-R,$(INSTALL_DIR)
+	;
+
+install install_network
+	:
+		cNetwork
+		/boost/python//boost_python
+		$(MYRRH_ROOT)//myrrh_pylib
+	:
+		<location>$(INSTALL_DIR)
+		<install-dependencies>off
+	;
+	
+
+#bpl-test man_test
+#	:
+#		test_network.py
+#		_network
+#	;
+
+
+
