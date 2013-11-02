@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 # -*- coding: latin-1 -*-
 #
-# Copyright John Reid 2010, 2011, 2012
+# Copyright John Reid 2010, 2011, 2012, 2013
 #
 
 """
-distutils setup script for pybool. Adapted from http://git.tiker.net/pyublas.git/tree.
+aksetup setup script for pybool. Adapted from http://git.tiker.net/pyublas.git/tree.
 """
 
 import os
@@ -22,11 +22,10 @@ def read(*fnames):
 
 
 def get_config_schema():
-    from aksetup_helper import ConfigSchema, Option, \
-            IncludeDir, LibraryDir, Libraries, BoostLibraries, \
-            Switch, StringListOption, make_boost_base_options
-
+    from aksetup_helper import ConfigSchema, BoostLibraries, \
+            StringListOption, make_boost_base_options
     import sys
+
     if 'darwin' in sys.platform:
         default_libs = []
         default_cxxflags = ['-arch', 'i386', '-arch', 'x86_64',
@@ -39,10 +38,10 @@ def get_config_schema():
     return ConfigSchema(
         make_boost_base_options() + [
             BoostLibraries("python"),
-    
-            StringListOption("CXXFLAGS", ["-Wno-sign-compare"], 
+
+            StringListOption("CXXFLAGS", ["-Wno-sign-compare"],
                 help="Any extra C++ compiler options to include"),
-            StringListOption("LDFLAGS", [], 
+            StringListOption("LDFLAGS", [],
                 help="Any extra linker options to include"),
         ]
     )
@@ -51,12 +50,13 @@ def get_config_schema():
 
 
 def main():
-    from aksetup_helper import hack_distutils, get_config, setup, NumpyExtension, find_packages
+    from aksetup_helper import hack_distutils, get_config, setup, NumpyExtension
+    from setuptools import find_packages
 
     hack_distutils()
     conf = get_config(get_config_schema())
 
-    INCLUDE_DIRS = ['C++/myrrh'] + conf['BOOST_INC_DIR'] 
+    INCLUDE_DIRS = ['C++/myrrh'] + conf['BOOST_INC_DIR']
     LIBRARY_DIRS = conf['BOOST_LIB_DIR']
     LIBRARIES = conf['BOOST_PYTHON_LIBNAME']
     EXTRA_DEFINES = { }
@@ -66,7 +66,7 @@ def main():
     except ImportError:
         # 2.x
         from distutils.command.build_py import build_py
-        
+
     #
     # C++ extension
     #
@@ -83,7 +83,7 @@ def main():
         extra_compile_args   = conf['CXXFLAGS'],
         extra_link_args      = conf['LDFLAGS'],
     )
-    
+
     setup(
         name                 = 'pybool',
         version              = read('python', 'pybool', 'VERSION').strip().split('-')[0],
@@ -116,7 +116,7 @@ def main():
         package_data         = { 'pybool': ['README', 'LICENSE', 'VERSION'] },
         install_requires     = [
                                 'distribute',
-                                'cookbook>=2.2', 
+                                'cookbook>=2.2',
                                 'numpy>=1.6.1',
                                 'matplotlib>=1.1.1',
                                 'networkx>=1.6',
@@ -127,7 +127,7 @@ def main():
 
         # 2to3 invocation
         cmdclass             = {'build_py': build_py},
-        
+
         include_package_data = False,
     )
 

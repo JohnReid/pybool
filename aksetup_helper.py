@@ -1,9 +1,6 @@
-# dealings with ez_setup ------------------------------------------------------
-import distribute_setup
-distribute_setup.use_setuptools()
+import setuptools  # noqa
+from setuptools import Extension
 
-import setuptools
-from setuptools import Extension, find_packages
 
 def count_down_delay(delay):
     from time import sleep
@@ -15,31 +12,11 @@ def count_down_delay(delay):
         sleep(1)
     print("")
 
-
-
-
-if not hasattr(setuptools, "_distribute"):
-    print("-------------------------------------------------------------------------")
-    print("Setuptools conflict detected.")
-    print("-------------------------------------------------------------------------")
-    print("When I imported setuptools, I did not get the distribute version of")
-    print("setuptools, which is troubling--this package really wants to be used")
-    print("with distribute rather than the old setuptools package. More than likely,")
-    print("you have both distribute and setuptools installed, which is bad.")
-    print("")
-    print("See this page for more information:")
-    print("http://wiki.tiker.net/DistributeVsSetuptools")
-    print("-------------------------------------------------------------------------")
-    print("I will continue after a short while, fingers crossed.")
-    print("Hit Ctrl-C now if you'd like to think about the situation.")
-    print("-------------------------------------------------------------------------")
-
-    count_down_delay(delay=10)
+DASH_SEPARATOR = 75 * "-"
 
 
 def setup(*args, **kwargs):
     from setuptools import setup
-    import traceback
     try:
         setup(*args, **kwargs)
     except KeyboardInterrupt:
@@ -47,12 +24,11 @@ def setup(*args, **kwargs):
     except SystemExit:
         raise
     except:
-        print ("----------------------------------------------------------------------------")
-        print ("Sorry, your build failed. Try rerunning configure.py with different options.")
-        print ("----------------------------------------------------------------------------")
+        print(DASH_SEPARATOR)
+        print("Sorry, your build failed. Try rerunning configure.py with "
+                "different options.")
+        print(DASH_SEPARATOR)
         raise
-
-
 
 
 class NumpyExtension(Extension):
@@ -62,7 +38,7 @@ class NumpyExtension(Extension):
     def __init__(self, *args, **kwargs):
         Extension.__init__(self, *args, **kwargs)
         self._include_dirs = self.include_dirs
-        del self.include_dirs # restore overwritten property
+        del self.include_dirs  # restore overwritten property
 
     def get_numpy_incpath(self):
         from imp import find_module
@@ -73,29 +49,20 @@ class NumpyExtension(Extension):
 
     def get_include_dirs(self):
         return self._include_dirs + [self.get_numpy_incpath()]
+
     def set_include_dirs(self, value):
         self._include_dirs = value
+
     def del_include_dirs(self):
         pass
 
     include_dirs = property(get_include_dirs, set_include_dirs, del_include_dirs)
 
 
-
-
 class PyUblasExtension(NumpyExtension):
     def get_module_include_path(self, name):
-        from imp import find_module
-        file, pathname, descr = find_module(name)
-        from os.path import join, exists
-        installed_path = join(pathname, "..", "include")
-        development_path = join(pathname, "..", "src", "cpp")
-        if exists(installed_path):
-            return installed_path
-        elif exists(development_path):
-            return development_path
-        else:
-            raise RuntimeError("could not find C include path for module '%s'" % name)
+        from pkg_resources import Requirement, resource_filename
+        return resource_filename(Requirement.parse(name), "%s/include" % name)
 
     @property
     def include_dirs(self):
@@ -103,8 +70,6 @@ class PyUblasExtension(NumpyExtension):
                 self.get_numpy_incpath(),
                 self.get_module_include_path("pyublas"),
                 ]
-
-
 
 
 class HedgeExtension(PyUblasExtension):
@@ -117,9 +82,8 @@ class HedgeExtension(PyUblasExtension):
                 ]
 
 
+# {{{ tools
 
-
-# tools -----------------------------------------------------------------------
 def flatten(list):
     """For an iterable of sub-iterables, generate each member of each
     sub-iterable in turn, i.e. a flattened version of that super-iterable.
@@ -131,16 +95,15 @@ def flatten(list):
             yield j
 
 
-
-
 def humanize(sym_str):
     words = sym_str.lower().replace("_", " ").split(" ")
     return " ".join([word.capitalize() for word in words])
 
+# }}}
 
 
+# {{{ siteconf handling
 
-# siteconf handling -----------------------------------------------------------
 def get_config(schema=None, warn_about_no_config=True):
     if schema is None:
         from setup import get_config_schema
@@ -155,6 +118,8 @@ def get_config(schema=None, warn_about_no_config=True):
         print("*** I will go ahead with the default configuration.")
         print("*** In all likelihood, this will not work out.")
         print("*** ")
+        print("*** See README_SETUP.txt for more information.")
+        print("*** ")
         print("*** If the build does fail, just re-run configure.py with the")
         print("*** correct arguments, and then retry. Good luck!")
         print("*************************************************************")
@@ -164,8 +129,6 @@ def get_config(schema=None, warn_about_no_config=True):
         count_down_delay(delay=10)
 
     return expand_options(schema.read_config())
-
-
 
 
 def hack_distutils(debug=False, fast_link=True, what_opt=3):
@@ -209,15 +172,16 @@ def hack_distutils(debug=False, fast_link=True, what_opt=3):
                             ['-Wl,-O'])
                     cvars[varname] = str.join(' ', ldsharedflags)
 
+# }}}
 
 
-# configure guts --------------------------------------------------------------
+# {{{ configure guts
+
 def default_or(a, b):
     if a is None:
         return b
     else:
         return a
-
 
 
 def expand_str(s, options):
@@ -234,6 +198,7 @@ def expand_str(s, options):
         return expand_str(repl, options)
 
     return re.subn(r"\$\{([a-zA-Z0-9_]+)\}", my_repl, s)[0]
+
 
 def expand_value(v, options):
     if isinstance(v, str):
@@ -256,10 +221,6 @@ def expand_value(v, options):
 def expand_options(options):
     return dict(
             (k, expand_value(v, options)) for k, v in options.items())
-
-
-
-
 
 
 class ConfigSchema:
@@ -414,12 +375,6 @@ class ConfigSchema:
                 for opt in self.options)
 
 
-
-
-
-
-
-
 class Option(object):
     def __init__(self, name, default=None, help=None):
         self.name = name
@@ -454,10 +409,9 @@ class Option(object):
     def take_from_configparser(self, options):
         return getattr(options, self.name)
 
+
 class Switch(Option):
     def add_to_configparser(self, parser, default=None):
-        option = self.as_option()
-
         if not isinstance(self.default, bool):
             raise ValueError("Switch options must have a default")
 
@@ -479,12 +433,13 @@ class Switch(Option):
             default=default,
             action=action)
 
+
 class StringListOption(Option):
     def value_to_str(self, default):
         if default is None:
             return None
 
-        return ",".join([str(el) for el in default])
+        return ",".join([str(el).replace(",", r"\,") for el in default])
 
     def get_help(self, default):
         return Option.get_help(self, default) + " (several ok)"
@@ -495,7 +450,11 @@ class StringListOption(Option):
             return None
         else:
             if opt:
-                return opt.split(",")
+                import re
+                sep = re.compile(r"(?<!\\),")
+                result = sep.split(opt)
+                result = [i.replace(r"\,", ",") for i in result]
+                return result
             else:
                 return []
 
@@ -506,11 +465,13 @@ class IncludeDir(StringListOption):
                 help=help or ("Include directories for %s"
                 % (human_name or humanize(lib_name))))
 
+
 class LibraryDir(StringListOption):
     def __init__(self, lib_name, default=None, human_name=None, help=None):
         StringListOption.__init__(self, "%s_LIB_DIR" % lib_name, default,
                 help=help or ("Library directories for %s"
                 % (human_name or humanize(lib_name))))
+
 
 class Libraries(StringListOption):
     def __init__(self, lib_name, default=None, human_name=None, help=None):
@@ -518,12 +479,21 @@ class Libraries(StringListOption):
                 help=help or ("Library names for %s (without lib or .so)"
                 % (human_name or humanize(lib_name))))
 
+
 class BoostLibraries(Libraries):
-    def __init__(self, lib_base_name):
+    def __init__(self, lib_base_name, default_lib_name=None):
+        if default_lib_name is None:
+            if lib_base_name == "python":
+                import sys
+                default_lib_name = "boost_python-py%d%d" % sys.version_info[:2]
+            else:
+                default_lib_name = "boost_%s" % lib_base_name
+
         Libraries.__init__(self, "BOOST_%s" % lib_base_name.upper(),
-                ["boost_%s" % lib_base_name],
+                [default_lib_name],
                 help="Library names for Boost C++ %s library (without lib or .so)"
                     % humanize(lib_base_name))
+
 
 def set_up_shipped_boost_if_requested(project_name, conf):
     """Set up the package to use a shipped version of Boost.
@@ -536,14 +506,14 @@ def set_up_shipped_boost_if_requested(project_name, conf):
 
     if conf["USE_SHIPPED_BOOST"]:
         if not exists("bpl-subset/bpl_subset/boost/version.hpp"):
-            print("------------------------------------------------------------------------")
-            print("The shipped Boost library was not found, but USE_SHIPPED_BOOST is True.")
+            print(DASH_SEPARATOR)
+            print("The shipped Boost library was not found, but "
+                    "USE_SHIPPED_BOOST is True.")
             print("(The files should be under bpl-subset/.)")
-            print("------------------------------------------------------------------------")
+            print(DASH_SEPARATOR)
             print("If you got this package from git, you probably want to do")
             print("")
-            print(" $ git submodule init")
-            print(" $ git submodule update")
+            print(" $ git submodule update --init")
             print("")
             print("to fetch what you are presently missing. If you got this from")
             print("a distributed package on the net, that package is broken and")
@@ -551,7 +521,7 @@ def set_up_shipped_boost_if_requested(project_name, conf):
             print("to try and see if the build succeeds that way, but in the long")
             print("run you might want to either get the missing bits or turn")
             print("'USE_SHIPPED_BOOST' off.")
-            print("------------------------------------------------------------------------")
+            print(DASH_SEPARATOR)
             conf["USE_SHIPPED_BOOST"] = False
 
             count_down_delay(delay=10)
@@ -568,7 +538,7 @@ def set_up_shipped_boost_if_requested(project_name, conf):
                 + glob("bpl-subset/bpl_subset/libs/*/*.cpp"))
 
         # make sure next line succeeds even on Windows
-        source_files = [f.replace("\\","/") for f in source_files]
+        source_files = [f.replace("\\", "/") for f in source_files]
 
         source_files = [f for f in source_files
                 if not f.startswith("bpl-subset/bpl_subset/libs/thread/src")]
@@ -603,6 +573,7 @@ def set_up_shipped_boost_if_requested(project_name, conf):
                     "BOOST_THREAD_BUILD_DLL": 1,
 
                     "BOOST_MULTI_INDEX_DISABLE_SERIALIZATION": 1,
+                    "BOOST_THREAD_DONT_USE_CHRONO": 1,
                     "BOOST_PYTHON_SOURCE": 1,
                     "boost": '%sboost' % project_name
                     }
@@ -618,11 +589,6 @@ def make_boost_base_options():
         Option("BOOST_COMPILER", default="gcc43",
             help="The compiler with which Boost C++ was compiled, e.g. gcc43"),
         ]
-
-
-
-
-
 
 
 def configure_frontend():
@@ -650,7 +616,8 @@ def configure_frontend():
             help="Ignored")
     parser.add_option("--enable-shared", help="Ignored", action="store_false")
     parser.add_option("--disable-static", help="Ignored", action="store_false")
-    parser.add_option("--update-user", help="Update user config file (%s)" % schema.user_conf_file,
+    parser.add_option("--update-user",
+            help="Update user config file (%s)" % schema.user_conf_file,
             action="store_true")
     parser.add_option("--update-global",
             help="Update global config file (%s)" % schema.global_conf_file,
@@ -675,8 +642,6 @@ def configure_frontend():
         substs["PYTHON_EXE"] = options.python_exe
 
         substitute(substs, "Makefile")
-
-
 
 
 def substitute(substitutions, fname):
@@ -706,10 +671,11 @@ def substitute(substitutions, fname):
                 else:
                     subst = '"%s"' % subst
 
-                l = l[:match.start()] + subst  + l[match.end():]
+                l = l[:match.start()] + subst + l[match.end():]
                 made_change = True
         new_lines.append(l)
-    new_lines.insert(1, "# DO NOT EDIT THIS FILE -- it was generated by configure.py\n")
+    new_lines.insert(1, "# DO NOT EDIT THIS FILE -- "
+            "it was generated by configure.py\n")
     import sys
     new_lines.insert(2, "# %s\n" % (" ".join(sys.argv)))
     open(fname, "w").write("".join(new_lines))
@@ -719,6 +685,30 @@ def substitute(substitutions, fname):
     chmod(fname, infile_stat_res.st_mode)
 
 
+def _run_git_command(cmd):
+    git_error = None
+    from subprocess import Popen, PIPE
+    try:
+        popen = Popen(["git"] + cmd, stdout=PIPE)
+        stdout, stderr = popen.communicate()
+        if popen.returncode != 0:
+            git_error = "git returned error code %d: %s" % (popen.returncode, stderr)
+    except OSError:
+        git_error = "(OS error, likely git not found)"
+
+    if git_error is not None:
+        print(DASH_SEPARATOR)
+        print("Trouble invoking git")
+        print(DASH_SEPARATOR)
+        print("The package directory appears to be a git repository, but I could")
+        print("not invoke git to check whether my submodules are up to date.")
+        print("")
+        print("The error was:")
+        print(git_error)
+        print("Hit Ctrl-C now if you'd like to think about the situation.")
+        print(DASH_SEPARATOR)
+        count_down_delay(delay=5)
+    return stdout.decode("ascii"), git_error
 
 
 def check_git_submodules():
@@ -726,40 +716,17 @@ def check_git_submodules():
     if not isdir(".git"):
         # not a git repository
         return
-
-    git_error = None
-    from subprocess import Popen, PIPE
-    try:
-        popen = Popen(["git", "--version"], stdout=PIPE)
-        stdout_data, _ = popen.communicate()
-        if popen.returncode != 0:
-            git_error = "git returned error code %d" % popen.returncode
-    except OSError:
-        git_error = "(os error, likely git not found)"
-
-    if git_error is not None:
-        print("-------------------------------------------------------------------------")
-        print("Trouble invoking git")
-        print("-------------------------------------------------------------------------")
-        print("The package directory appears to be a git repository, but I could")
-        print("not invoke git to check whether my submodules are up to date.")
-        print("")
-        print("The error was:")
-        print(git_error)
-        print("Hit Ctrl-C now if you'd like to think about the situation.")
-        print("-------------------------------------------------------------------------")
-        count_down_delay(delay=5)
+    if isdir("../.repo"):
+        # assume repo is in charge and bail
         return
 
-    popen = Popen(["git", "submodule", "status"], stdout=PIPE)
-    stdout_data, _ = popen.communicate()
-    stdout_data = stdout_data.decode("ascii")
-    if popen.returncode != 0:
-        git_error = "git returned error code %d" % popen.returncode
+    stdout, git_error = _run_git_command(["submodule", "status"])
+    if git_error is not None:
+        return
 
     pkg_warnings = []
 
-    lines = stdout_data.split("\n")
+    lines = stdout.split("\n")
     for l in lines:
         if not l.strip():
             continue
@@ -772,10 +739,10 @@ def check_git_submodules():
             continue
 
         if status == "+":
-            pkg_warnings.append("version of '%s' is not what this outer package wants"
-                    % package)
+            pkg_warnings.append("version of '%s' is not what this "
+                    "outer package wants" % package)
         elif status == "-":
-            pkg_warnings.append("subpackage '%s' is not initialized" 
+            pkg_warnings.append("subpackage '%s' is not initialized"
                     % package)
         elif status == " ":
             pass
@@ -784,36 +751,36 @@ def check_git_submodules():
                     % package)
 
     if pkg_warnings:
-            print("-------------------------------------------------------------------------")
+            print(DASH_SEPARATOR)
             print("git submodules are not up-to-date or in odd state")
-            print("-------------------------------------------------------------------------")
+            print(DASH_SEPARATOR)
             print("If this makes no sense, you probably want to say")
             print("")
-            print(" $ git submodule init")
-            print(" $ git submodule update")
+            print(" $ git submodule update --init")
             print("")
-            print("to fetch what you are presently missing and move on with your life.")
-            print("If you got this from a distributed package on the net, that package is")
-            print("broken and should be fixed. Please inform whoever gave you this package.")
+            print("to fetch what you are presently missing and "
+                    "move on with your life.")
+            print("If you got this from a distributed package on the "
+                    "net, that package is")
+            print("broken and should be fixed. Please inform whoever "
+                    "gave you this package.")
             print("")
             print("These issues were found:")
             for w in pkg_warnings:
                 print("  %s" % w)
             print("")
-            print("I will try to continue after a short wait, fingers crossed.")
-            print("-------------------------------------------------------------------------")
+            print("I will try to initialize the submodules for you "
+                    "after a short wait.")
+            print(DASH_SEPARATOR)
             print("Hit Ctrl-C now if you'd like to think about the situation.")
-            print("-------------------------------------------------------------------------")
+            print(DASH_SEPARATOR)
 
             from os.path import exists
             if not exists(".dirty-git-ok"):
                 count_down_delay(delay=10)
-
-
-
-
-
-
-
-
-
+                stdout, git_error = _run_git_command(
+                        ["submodule", "update", "--init"])
+                if git_error is None:
+                    print(DASH_SEPARATOR)
+                    print("git submodules initialized successfully")
+                    print(DASH_SEPARATOR)

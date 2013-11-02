@@ -1,0 +1,26 @@
+#!/bin/bash -ex
+
+ENV=install-test-env
+[ ! -d $ENV ]
+# have to use system site packages for numpy to find python-dev package
+#virtualenv --system-site-packages $ENV
+virtualenv $ENV
+. $ENV/bin/activate
+
+PACKAGE=pybool
+REPO=pybool
+UNINSTALL="pip uninstall --yes $PACKAGE"
+
+# Install from git
+pip install git+https://github.com/JohnReid/$REPO.git
+python -c "import $PACKAGE"
+$UNINSTALL
+
+# Install from PyPI
+pip install $PACKAGE
+python -c "import $PACKAGE"
+$UNINSTALL
+
+# Install local version
+python setup.py install
+python -c "import $PACKAGE"

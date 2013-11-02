@@ -5,8 +5,8 @@
 # Configuration
 #
 PYPI_NAME=pybool
-DIR=htdocs/pybool
-HOST=xenakis
+DIR=www/pybool
+HOST=zemlinsky
 UPLOAD_URL="http://pypi.python.org/pypi?%3Aaction=pkg_edit&name=$PYPI_NAME"
 
 
@@ -38,10 +38,12 @@ scp index.html $HOST:$DIR/
 #
 # Check everything is checked in
 #
-if [ "$(svn st)" != "" ]
+if ! git st | grep "working directory clean"
 then
-  svn st
+  git st
+  echo "*************************************************************"
   echo "You need to check in everything before updating distribution."
+  echo "*************************************************************"
   exit -1
 fi
 
