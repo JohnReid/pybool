@@ -1,4 +1,4 @@
-#!/bin/bash -e
+#!/bin/bash -ex
 
 
 #
@@ -9,30 +9,6 @@ DIR=www/pybool
 HOST=zemlinsky
 UPLOAD_URL="http://pypi.python.org/pypi?%3Aaction=pkg_edit&name=$PYPI_NAME"
 
-
-#
-# Build pdf of tutorial - now outdated - replaced by ReST
-#
-function build_tutorial_pdf {
-    rm -rf /tmp/pybool-export
-    svn export http://sysbio.mrc-bsu.cam.ac.uk/svn/johns/MyProjects/trunk/Python/pybool /tmp/pybool-export
-    cd /tmp/pybool-export/
-    cd tex/Figures/
-    ./make-figs.sh
-    cd ..
-    pdflatex -shell-escape pybool-tutorial
-    bibtex pybool-tutorial
-    pdflatex -shell-escape pybool-tutorial
-    pdflatex -shell-escape pybool-tutorial
-    scp pybool-tutorial.pdf $HOST:$DIR/
-}
-
-
-
-#
-# Copy index.html across
-#
-scp index.html $HOST:$DIR/
 
 
 #
@@ -59,8 +35,9 @@ fi
 # Update the documentation and upload to pypi and our web host
 #
 rm -rf docs/source/apidoc/
+pip install sphinx sphinx-pypi-upload cookbook
 sphinx-apidoc -H pybool -A "John Reid" -o docs/source/apidoc python/
-LD_LIBRARY_PATH=python/pybool/ PYTHONPATH=python/:$HOME/Dev/Python/Cookbook/python/ python setup.py build_sphinx
+PYTHONPATH=python/ LD_LIBRARY_PATH=python/pybool/ python setup.py build_sphinx
 PYTHONPATH=python/ python setup.py upload_sphinx
 scp -r docs/build/html/* $HOST:$DIR/docs/build/html/
 

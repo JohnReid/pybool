@@ -84,6 +84,9 @@ def main():
         extra_link_args      = conf['LDFLAGS'],
     )
 
+    #
+    # Main setup
+    #
     setup(
         name                 = 'pybool',
         version              = read('python', 'pybool', 'VERSION').strip().split('-')[0],
@@ -92,7 +95,7 @@ def main():
         author               ='John Reid',
         author_email         ='johnbaronreid@netscape.net',
         license              = 'BSD',
-        url                  ='http://sysbio.mrc-bsu.cam.ac.uk/johns/pybool/',
+        url                  ='http://sysbio.mrc-bsu.cam.ac.uk/johns/pybool/docs/build/html/index.html',
         classifiers          = [
             'Development Status :: 5 - Production/Stable',
             'Environment :: Console',
@@ -115,7 +118,6 @@ def main():
         py_modules           = ['pybool.examples.tutorial'],
         package_data         = { 'pybool': ['README', 'LICENSE', 'VERSION'] },
         install_requires     = [
-                                'distribute',
                                 'cookbook>=2.2',
                                 'numpy>=1.6.1',
                                 'matplotlib>=1.1.1',

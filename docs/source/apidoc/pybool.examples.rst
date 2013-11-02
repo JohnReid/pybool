@@ -1,19 +1,30 @@
-examples Package
-================
+pybool.examples package
+=======================
 
-:mod:`examples` Package
------------------------
+Submodules
+----------
 
-.. automodule:: pybool.examples
+pybool.examples.neurogenesis module
+-----------------------------------
+
+.. automodule:: pybool.examples.neurogenesis
     :members:
     :undoc-members:
     :show-inheritance:
 
-:mod:`tutorial` Module
-----------------------
+pybool.examples.tutorial module
+-------------------------------
 
 .. automodule:: pybool.examples.tutorial
     :members:
     :undoc-members:
     :show-inheritance:
 
+
+Module contents
+---------------
+
+.. automodule:: pybool.examples
+    :members:
+    :undoc-members:
+    :show-inheritance:
